@@ -53,6 +53,7 @@ class OpenAiCompatibleSceneProvider {
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
             doOutput = true
+            instanceFollowRedirects = false
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
             apiKey.trim().takeIf(String::isNotEmpty)?.let {
@@ -63,10 +64,19 @@ class OpenAiCompatibleSceneProvider {
             connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
-            val responseText = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-            require(responseText.length <= MAX_RESPONSE_CHARACTERS) {
-                "Provider response exceeded the allowed size."
-            }
+            val responseText = stream?.bufferedReader(Charsets.UTF_8)?.use { reader ->
+                val response = StringBuilder()
+                val chunk = CharArray(8_192)
+                while (true) {
+                    val count = reader.read(chunk)
+                    if (count < 0) break
+                    require(response.length + count <= MAX_RESPONSE_CHARACTERS) {
+                        "Provider response exceeded the allowed size."
+                    }
+                    response.append(chunk, 0, count)
+                }
+                response.toString()
+            }.orEmpty()
             if (status !in 200..299) throw IllegalStateException("Provider returned HTTP $status.")
             val content = JSONObject(responseText)
                 .getJSONArray("choices")
