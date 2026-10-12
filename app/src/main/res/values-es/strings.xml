@@ -3423,4 +3423,42 @@
     <string name="export_contract_unknown">desconocido</string>
     <string name="export_contract_no_audio">sin audio</string>
     <string name="export_contract_fallback_also">También se hizo con un codificador o una ruta alternativa</string>
+
+    <!-- Flujo de guion a escenas con IA -->
+    <string name="s2s_title">Guion a escenas con IA</string>
+    <string name="s2s_project_name">Nombre del proyecto de línea de tiempo</string>
+    <string name="s2s_script_label">Guion o narración</string>
+    <string name="s2s_script_hint">Pega un guion. Separa las escenas con líneas en blanco o usa la puntuación de las frases.</string>
+    <string name="s2s_mode_label">Modo de generación</string>
+    <string name="s2s_mode_offline">Borrador sin conexión</string>
+    <string name="s2s_mode_cloud">Punto de conexión de IA configurable</string>
+    <string name="s2s_endpoint_label">URL base HTTPS del punto de conexión</string>
+    <string name="s2s_model_label">Modelo</string>
+    <string name="s2s_api_key_label">Clave API (solo en memoria)</string>
+    <string name="s2s_local_notice">El modo sin conexión divide el guion en el dispositivo y crea borradores de indicaciones mediante reglas. No usa un modelo de lenguaje descargado.</string>
+    <string name="s2s_cloud_notice">El punto de conexión recibe tu guion. Usa un proveedor de confianza. Esta función mantiene las claves API solo en la memoria de la pantalla y no las guarda.</string>
+    <string name="s2s_generate">Generar escenas</string>
+    <string name="s2s_generating">Generando escenas…</string>
+    <string name="s2s_scene_narration">Narración</string>
+    <string name="s2s_visual_prompt">Indicación visual</string>
+    <string name="s2s_negative_prompt">Evitar / indicación negativa</string>
+    <string name="s2s_duration_seconds">Duración (segundos)</string>
+    <string name="s2s_attach_media">Adjuntar imagen o vídeo</string>
+    <string name="s2s_clear_media">Quitar contenido multimedia</string>
+    <string name="s2s_remove_scene">Quitar escena</string>
+    <string name="s2s_move_up">Mover arriba</string>
+    <string name="s2s_move_down">Mover abajo</string>
+    <string name="s2s_scene_count">Escenas: %1$d</string>
+    <string name="s2s_create_timeline">Crear línea de tiempo en ClearCut</string>
+    <string name="s2s_export_otio">Exportar OTIO</string>
+    <string name="s2s_export_fcpxml">Exportar FCPXML</string>
+    <string name="s2s_export_edl">Exportar EDL</string>
+    <string name="s2s_export_storyboard">Exportar JSON del guion gráfico</string>
+    <string name="s2s_no_scenes">Pega un guion y genera escenas primero.</string>
+    <string name="s2s_working">Procesando…</string>
+    <string name="s2s_media_relink_notice">Solo se insertan en la línea de tiempo las escenas con contenido multimedia adjunto. Los proyectos externos pueden necesitar volver a vincular los archivos en otro dispositivo u ordenador.</string>
+    <string name="s2s_generate_failed">No se pudieron generar las escenas.</string>
+    <string name="s2s_media_attached">Contenido multimedia adjunto</string>
+    <string name="s2s_timeline_no_media_notice">Adjunta al menos una imagen o un vídeo antes de crear la línea de tiempo.</string>
+  
 </resources>
