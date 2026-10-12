@@ -57,6 +57,8 @@ import com.novacut.editor.model.SortMode
 import com.novacut.editor.model.SourceColorMetadata
 import com.novacut.editor.model.Track
 import com.novacut.editor.model.TrackType
+import com.novacut.editor.model.TextAlignment
+import com.novacut.editor.model.TextOverlay
 import com.novacut.editor.ui.settings.DiagnosticBundleBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -838,6 +840,7 @@ class ProjectListViewModel @Inject constructor(
                 }
                 val importedByOriginalUri = imported.associateBy { it.originalUri.toString() }
                 var cursorMs = 0L
+                val narrationByClipId = mutableMapOf<String, String>()
                 val visualClips = selectedScenes.mapNotNull { scene ->
                     val originalUri = scene.mediaUri ?: return@mapNotNull null
                     val importedMedia = importedByOriginalUri[originalUri] ?: return@mapNotNull null
@@ -860,6 +863,7 @@ class ProjectListViewModel @Inject constructor(
                         trimEndMs = trimEndMs,
                         name = scene.narration.take(80)
                     )
+                    narrationByClipId[clip.id] = scene.narration
                     cursorMs += clip.durationMs
                     clip
                 }
@@ -869,6 +873,22 @@ class ProjectListViewModel @Inject constructor(
                     return@launch
                 }
 
+                val textOverlays = visualClips.mapNotNull { clip ->
+                    narrationByClipId[clip.id]
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { narration ->
+                            TextOverlay(
+                                text = narration,
+                                fontSize = 40f,
+                                bold = true,
+                                strokeWidth = 2f,
+                                alignment = TextAlignment.CENTER,
+                                positionY = 0.82f,
+                                startTimeMs = clip.timelineStartMs,
+                                endTimeMs = clip.timelineEndMs,
+                            )
+                        }
+                }
                 val trackHeight = settingsRepo.settings.first().defaultTrackHeight
                 val tracks = buildTracks(
                     listOf(TrackType.VIDEO, TrackType.AUDIO),
@@ -887,7 +907,7 @@ class ProjectListViewModel @Inject constructor(
                         initialState = AutoSaveState(
                             projectId = project.id,
                             tracks = tracks,
-                            textOverlays = emptyList()
+                            textOverlays = textOverlays
                         )
                     )
                 }
