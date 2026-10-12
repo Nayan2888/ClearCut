@@ -21,7 +21,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.URI
 import javax.inject.Inject
 
 enum class ScriptSceneGenerationMode { OFFLINE, OPENAI_COMPATIBLE }
@@ -126,12 +125,18 @@ class ScriptToSceneViewModel @Inject constructor(
     fun moveScene(sceneId: String, offset: Int) {
         _state.update { current ->
             val sourceIndex = current.scenes.indexOfFirst { it.id == sceneId }
-            val targetIndex = (sourceIndex + offset).coerceIn(0, current.scenes.lastIndex)
-            if (sourceIndex < 0 || sourceIndex == targetIndex) current else {
-                val mutable = current.scenes.toMutableList()
-                val scene = mutable.removeAt(sourceIndex)
-                mutable.add(targetIndex, scene)
-                current.copy(scenes = mutable)
+            if (sourceIndex < 0 || current.scenes.isEmpty()) {
+                current
+            } else {
+                val targetIndex = (sourceIndex + offset).coerceIn(0, current.scenes.lastIndex)
+                if (sourceIndex == targetIndex) {
+                    current
+                } else {
+                    val mutable = current.scenes.toMutableList()
+                    val scene = mutable.removeAt(sourceIndex)
+                    mutable.add(targetIndex, scene)
+                    current.copy(scenes = mutable)
+                }
             }
         }
     }
@@ -245,9 +250,8 @@ class ScriptToSceneViewModel @Inject constructor(
         val clips = buildList {
             scenes.forEach { scene ->
                 val rawUri = scene.mediaUri ?: return@forEach
-                val uri = runCatching { URI(rawUri) }.getOrNull() ?: return@forEach
-                if (uri.scheme.isNullOrBlank()) return@forEach
-                val androidUri = Uri.parse(rawUri)
+                val androidUri = runCatching { Uri.parse(rawUri) }.getOrNull() ?: return@forEach
+                if (androidUri.scheme.isNullOrBlank()) return@forEach
                 val sourceDuration = when (scene.mediaKind) {
                     ScriptSceneMediaKind.IMAGE -> scene.durationMs
                     ScriptSceneMediaKind.VIDEO -> scene.sourceDurationMs ?: scene.durationMs
