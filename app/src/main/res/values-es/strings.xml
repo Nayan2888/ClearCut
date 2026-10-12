@@ -3462,4 +3462,5 @@
     <string name="s2s_media_attached">Contenido multimedia adjunto</string>
     <string name="s2s_timeline_no_media_notice">Adjunta al menos una imagen o un vídeo antes de crear la línea de tiempo.</string>
   
+    <string name="s2s_export_format_note">La narración se añade como texto en pantalla en ClearCut y se exporta como marcadores mediante OTIO. FCPXML y EDL de este flujo todavía no incluyen esas capas de texto. El JSON conserva la narración y las indicaciones.</string>
 </resources>
