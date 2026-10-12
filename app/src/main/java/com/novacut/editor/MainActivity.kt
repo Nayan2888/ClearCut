@@ -44,6 +44,7 @@ import com.novacut.editor.ui.editor.EditorScreen
 import com.novacut.editor.ui.editor.LocalTabletopPosture
 import com.novacut.editor.ui.projects.ProjectListScreen
 import com.novacut.editor.ui.settings.SettingsScreen
+import com.novacut.editor.ui.script.ScriptToSceneScreen
 import com.novacut.editor.ui.theme.ClearCutTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -164,6 +165,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("editor/${Uri.encode(projectId)}?expectRecovery=false")
                                 },
                                 onSettings = { navController.navigate("settings") },
+                                onScriptToScene = { navController.navigate("script_to_scene") },
                                 openNewProject = pendingNewProjectShortcut,
                                 onNewProjectOpened = { pendingNewProjectShortcut = false },
                                 pendingImportItems = pendingIncomingMedia,
@@ -186,6 +188,18 @@ class MainActivity : ComponentActivity() {
                                             "editor/${Uri.encode(it)}?expectRecovery=false&replayTutorial=true"
                                         } ?: "editor/tutorial?replayTutorial=true"
                                         navController.navigate(route)
+                                    }
+                                }
+                            )
+                        }
+
+                        composable("script_to_scene") {
+                            ScriptToSceneScreen(
+                                onBack = { navController.popBackStack() },
+                                onProjectCreated = { projectId ->
+                                    navController.navigate("editor/${Uri.encode(projectId)}?expectRecovery=false") {
+                                        launchSingleTop = true
+                                        popUpTo("projects") { inclusive = false }
                                     }
                                 }
                             )
