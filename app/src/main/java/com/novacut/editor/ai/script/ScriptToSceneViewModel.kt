@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.novacut.editor.engine.TimelineExchangeEngine
 import com.novacut.editor.model.Clip
+import com.novacut.editor.model.TextAlignment
+import com.novacut.editor.model.TextOverlay
 import com.novacut.editor.model.TimelineTimebase
 import com.novacut.editor.model.Track
 import com.novacut.editor.model.TrackType
@@ -30,6 +32,11 @@ enum class ScriptSceneExportFormat(val extension: String, val mimeType: String) 
     EDL("edl", "text/plain"),
     STORYBOARD_JSON("clearcut-storyboard.json", "application/json"),
 }
+
+private data class ScriptSceneExportPlan(
+    val tracks: List<Track>,
+    val textOverlays: List<TextOverlay>,
+)
 
 data class ScriptToSceneUiState(
     val projectName: String = "Script storyboard",
@@ -219,7 +226,8 @@ class ScriptToSceneViewModel @Inject constructor(
             }.toString(2)
         }
 
-        val tracks = buildExportTracks(snapshot.scenes)
+        val exportPlan = buildExportPlan(snapshot.scenes)
+        val tracks = exportPlan.tracks
         require(tracks.firstOrNull { it.type == TrackType.VIDEO }?.clips?.isNotEmpty() == true) {
             "Attach at least one image or video before exporting a timeline."
         }
@@ -227,7 +235,7 @@ class ScriptToSceneViewModel @Inject constructor(
         return when (format) {
             ScriptSceneExportFormat.OTIO -> timelineExchangeEngine.exportToOtio(
                 tracks = tracks,
-                textOverlays = emptyList(),
+                textOverlays = exportPlan.textOverlays,
                 projectName = projectName,
                 timebase = timebase,
             )
@@ -245,38 +253,53 @@ class ScriptToSceneViewModel @Inject constructor(
         }
     }
 
-    private fun buildExportTracks(scenes: List<ScriptScene>): List<Track> {
+    private fun buildExportPlan(scenes: List<ScriptScene>): ScriptSceneExportPlan {
         var cursorMs = 0L
-        val clips = buildList {
-            scenes.forEach { scene ->
-                val rawUri = scene.mediaUri ?: return@forEach
-                val androidUri = runCatching { Uri.parse(rawUri) }.getOrNull() ?: return@forEach
-                if (androidUri.scheme.isNullOrBlank()) return@forEach
-                val sourceDuration = when (scene.mediaKind) {
-                    ScriptSceneMediaKind.IMAGE -> scene.durationMs
-                    ScriptSceneMediaKind.VIDEO -> scene.sourceDurationMs ?: scene.durationMs
-                    null -> return@forEach
-                }.coerceAtLeast(1L)
-                val trimEnd = if (scene.mediaKind == ScriptSceneMediaKind.IMAGE) {
-                    scene.durationMs
-                } else {
-                    scene.durationMs.coerceAtMost(sourceDuration)
-                }.coerceIn(1L, sourceDuration)
-                val clip = Clip(
-                    sourceUri = androidUri,
-                    sourceDurationMs = sourceDuration,
-                    timelineStartMs = cursorMs,
-                    trimStartMs = 0L,
-                    trimEndMs = trimEnd,
-                    name = scene.narration.take(80),
+        val clips = mutableListOf<Clip>()
+        val textOverlays = mutableListOf<TextOverlay>()
+        scenes.forEach { scene ->
+            val rawUri = scene.mediaUri ?: return@forEach
+            val androidUri = runCatching { Uri.parse(rawUri) }.getOrNull() ?: return@forEach
+            if (androidUri.scheme.isNullOrBlank()) return@forEach
+            val sourceDuration = when (scene.mediaKind) {
+                ScriptSceneMediaKind.IMAGE -> scene.durationMs
+                ScriptSceneMediaKind.VIDEO -> scene.sourceDurationMs ?: scene.durationMs
+                null -> return@forEach
+            }.coerceAtLeast(1L)
+            val trimEnd = if (scene.mediaKind == ScriptSceneMediaKind.IMAGE) {
+                scene.durationMs
+            } else {
+                scene.durationMs.coerceAtMost(sourceDuration)
+            }.coerceIn(1L, sourceDuration)
+            val clip = Clip(
+                sourceUri = androidUri,
+                sourceDurationMs = sourceDuration,
+                timelineStartMs = cursorMs,
+                trimStartMs = 0L,
+                trimEndMs = trimEnd,
+                name = scene.narration.take(80),
+            )
+            clips += clip
+            if (scene.narration.isNotBlank()) {
+                textOverlays += TextOverlay(
+                    text = scene.narration,
+                    fontSize = 40f,
+                    bold = true,
+                    strokeWidth = 2f,
+                    alignment = TextAlignment.CENTER,
+                    positionY = 0.82f,
+                    startTimeMs = cursorMs,
+                    endTimeMs = cursorMs + clip.durationMs,
                 )
-                add(clip)
-                cursorMs += clip.durationMs
             }
+            cursorMs += clip.durationMs
         }
-        return listOf(
-            Track(type = TrackType.VIDEO, index = 0, clips = clips),
-            Track(type = TrackType.AUDIO, index = 1),
+        return ScriptSceneExportPlan(
+            tracks = listOf(
+                Track(type = TrackType.VIDEO, index = 0, clips = clips),
+                Track(type = TrackType.AUDIO, index = 1),
+            ),
+            textOverlays = textOverlays,
         )
     }
 
