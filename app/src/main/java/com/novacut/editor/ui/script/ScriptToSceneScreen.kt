@@ -214,6 +214,12 @@ fun ScriptToSceneScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                Text(
+                    text = stringResource(R.string.s2s_export_format_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 state.scenes.forEachIndexed { index, scene ->
                     ScriptSceneCard(
                         index = index,
