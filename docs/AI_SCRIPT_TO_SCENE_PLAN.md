@@ -14,10 +14,10 @@ Status (2026-10-12): source-level integration review and initial implementation 
 - Added a configurable HTTPS OpenAI-compatible chat-completions provider. API keys are supplied at runtime, redirects are disabled, and response reads are bounded. Provider error handling still needs execution-based review.
 - Added a Compose screen reachable from the project dashboard with scene edit/reorder/remove, duration edit, and image/video attachment.
 - Timeline creation delegates media copying to the existing incoming-media importer and persists through `createProjectWithInitialState`, so it uses the canonical project/media/autosave path.
-- Added OTIO, FCPXML, EDL, and ClearCut storyboard JSON export paths; external projects may need media relinking.
+- Added OTIO (including narration as markers), FCPXML, EDL, and ClearCut storyboard JSON export paths. The current FCPXML/EDL adapters in this workflow do not carry narration text overlays; external projects may need media relinking.
 - Added English/Spanish strings and JVM tests for Unicode splitting and response parsing.
 - Not implemented: local on-device generative model inference or automatic image/video synthesis; no verified model/runtime is available in the inspected paths. Media is user-attached. UI/instrumentation/persistence round-trip tests are not yet added.
-- Verified from repository text: English/Spanish string keys and format-placeholder tokens match.
+- Verified from repository text: English/Spanish string keys and format-placeholder tokens match (including export-limit disclosure). The pure `ScriptScene`/offline planner source was compiled with kotlinc and four Hindi/Unicode splitting, stable-ID, and blank-input smoke checks passed. The provider source was Kotlin-compiled only against temporary local JSON stubs and the bundled coroutines jar; that is a syntax check, not a substitute for project dependency compilation.
 - Not verified: Gradle build, JVM tests, lint, OTIO adapter round-trip, or device interaction. The execution environment could not resolve `github.com` for a local clone, and the repository returned no CI runs/status checks for the PR head.
 
 ## Milestone 0 — Complete source audit and baseline
