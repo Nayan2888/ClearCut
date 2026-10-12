@@ -3721,6 +3721,7 @@
     <string name="s2s_remove_scene">Remove scene</string>
     <string name="s2s_move_up">Move up</string>
     <string name="s2s_move_down">Move down</string>
+    <string name="s2s_scene_index">Scene %1$d</string>
     <string name="s2s_scene_count">Scenes: %1$d</string>
     <string name="s2s_create_timeline">Create ClearCut timeline</string>
     <string name="s2s_export_otio">Export OTIO</string>
