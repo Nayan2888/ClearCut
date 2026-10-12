@@ -83,6 +83,7 @@ private const val PROJECT_RENAME_MAX_CHARS = 80
 fun ProjectListScreen(
     onProjectSelected: (String) -> Unit,
     onSettings: () -> Unit = {},
+    onScriptToScene: () -> Unit = {},
     openNewProject: Boolean = false,
     onNewProjectOpened: () -> Unit = {},
     pendingImportItems: List<IncomingMediaItem> = emptyList(),
@@ -176,6 +177,7 @@ fun ProjectListScreen(
                 onCreateProject = { showTemplateSheet = true },
                 onImportTemplate = importTemplate,
                 onSettings = onSettings,
+                onScriptToScene = onScriptToScene,
                 showSearch = showCollectionControls,
                 showSortControls = showCollectionControls && projects.isNotEmpty(),
                 actionsEnabled = actionsEnabled
@@ -669,6 +671,7 @@ private fun ProjectHomeHero(
     onCreateProject: () -> Unit,
     onImportTemplate: () -> Unit,
     onSettings: () -> Unit,
+    onScriptToScene: () -> Unit,
     showSearch: Boolean,
     showSortControls: Boolean,
     actionsEnabled: Boolean
@@ -738,6 +741,14 @@ private fun ProjectHomeHero(
             enabled = actionsEnabled,
             primaryTestTag = ClearCutTestTags.PROJECTS_CREATE_PROJECT
         )
+
+        TextButton(
+            onClick = onScriptToScene,
+            enabled = actionsEnabled,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.s2s_title))
+        }
 
         if (showSearch) {
             OutlinedTextField(

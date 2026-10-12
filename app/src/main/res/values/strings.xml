@@ -3696,4 +3696,44 @@
     <string name="export_contract_unknown">unknown</string>
     <string name="export_contract_no_audio">no audio</string>
     <string name="export_contract_fallback_also">Also made with a fallback encoder or path</string>
+
+    <!-- AI Script-to-Scene workflow -->
+    <string name="s2s_title">AI Script to Scene</string>
+    <string name="s2s_project_name">Timeline project name</string>
+    <string name="s2s_script_label">Script or narration</string>
+    <string name="s2s_script_hint">Paste a script. Separate scenes with blank lines, or use sentence punctuation.</string>
+    <string name="s2s_mode_label">Generation mode</string>
+    <string name="s2s_mode_offline">Offline draft</string>
+    <string name="s2s_mode_cloud">Configurable AI endpoint</string>
+    <string name="s2s_endpoint_label">HTTPS endpoint base URL</string>
+    <string name="s2s_model_label">Model</string>
+    <string name="s2s_api_key_label">API key (kept in memory)</string>
+    <string name="s2s_local_notice">Offline mode splits the script on-device and drafts prompts with rules. It does not use a downloaded language model.</string>
+    <string name="s2s_cloud_notice">The endpoint receives your script. Use a provider you trust. API keys are held in screen memory only and are not saved by this workflow.</string>
+    <string name="s2s_generate">Generate scenes</string>
+    <string name="s2s_generating">Generating scenes…</string>
+    <string name="s2s_scene_narration">Narration</string>
+    <string name="s2s_visual_prompt">Visual prompt</string>
+    <string name="s2s_negative_prompt">Avoid / negative prompt</string>
+    <string name="s2s_duration_seconds">Duration (seconds)</string>
+    <string name="s2s_attach_media">Attach image or video</string>
+    <string name="s2s_clear_media">Remove media</string>
+    <string name="s2s_remove_scene">Remove scene</string>
+    <string name="s2s_move_up">Move up</string>
+    <string name="s2s_move_down">Move down</string>
+    <string name="s2s_scene_index">Scene %1$d</string>
+    <string name="s2s_scene_count">Scenes: %1$d</string>
+    <string name="s2s_create_timeline">Create ClearCut timeline</string>
+    <string name="s2s_export_otio">Export OTIO</string>
+    <string name="s2s_export_fcpxml">Export FCPXML</string>
+    <string name="s2s_export_edl">Export EDL</string>
+    <string name="s2s_export_storyboard">Export storyboard JSON</string>
+    <string name="s2s_no_scenes">Paste a script and generate scenes first.</string>
+    <string name="s2s_working">Working…</string>
+    <string name="s2s_media_relink_notice">Only scenes with attached media are inserted into the timeline. External projects may need media relinking on another device or computer.</string>
+    <string name="s2s_generate_failed">Scene generation failed.</string>
+    <string name="s2s_media_attached">Media attached</string>
+    <string name="s2s_timeline_no_media_notice">Attach at least one image or video before creating a timeline.</string>
+  
+    <string name="s2s_export_format_note">Scene narration is added as on-screen text in ClearCut and exported as markers through OTIO. FCPXML and EDL from this workflow do not yet carry those text overlays. Storyboard JSON preserves narration and prompts.</string>
 </resources>

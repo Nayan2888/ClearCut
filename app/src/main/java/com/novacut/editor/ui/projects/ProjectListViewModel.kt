@@ -7,6 +7,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
 import com.novacut.editor.engine.AppLog
+import com.novacut.editor.ai.script.ScriptScene
+import com.novacut.editor.ai.script.ScriptSceneMediaKind
 import androidx.core.content.FileProvider
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -55,6 +57,8 @@ import com.novacut.editor.model.SortMode
 import com.novacut.editor.model.SourceColorMetadata
 import com.novacut.editor.model.Track
 import com.novacut.editor.model.TrackType
+import com.novacut.editor.model.TextAlignment
+import com.novacut.editor.model.TextOverlay
 import com.novacut.editor.ui.settings.DiagnosticBundleBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -797,6 +801,135 @@ class ProjectListViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Build a real ClearCut project from a storyboard. Selected source media is copied
+     * through the same managed-media import and canonical autosave path as normal imports.
+     */
+    fun createProjectFromScriptScenes(
+        projectName: String,
+        scenes: List<ScriptScene>,
+        onCreated: (String) -> Unit
+    ) {
+        val selectedScenes = scenes.filter { !it.mediaUri.isNullOrBlank() }
+        if (selectedScenes.isEmpty()) {
+            showToast(appContext.getString(R.string.project_import_invalid_media))
+            return
+        }
+        viewModelScope.launch {
+            val operation = beginOperation(
+                title = appContext.getString(R.string.projects_operation_media_import_title),
+                description = appContext.getString(R.string.projects_operation_media_import_body)
+            )
+            val copiedManagedUris = mutableListOf<Uri>()
+            try {
+                val incomingItems = selectedScenes.mapNotNull { scene ->
+                    val uri = runCatching { Uri.parse(requireNotNull(scene.mediaUri)) }.getOrNull()
+                        ?: return@mapNotNull null
+                    val kind = when (scene.mediaKind) {
+                        ScriptSceneMediaKind.IMAGE -> IncomingMediaKind.IMAGE
+                        ScriptSceneMediaKind.VIDEO -> IncomingMediaKind.VIDEO
+                        null -> IncomingMediaKind.fromMimeType(
+                            runCatching { appContext.contentResolver.getType(uri) }.getOrNull()
+                        )
+                    }
+                    kind?.let { IncomingMediaItem(uri = uri, kind = it) }
+                }.distinctBy { it.uri.toString() }
+
+                val imported = withContext(Dispatchers.IO) {
+                    importIncomingMediaItems(incomingItems, copiedManagedUris)
+                }
+                val importedByOriginalUri = imported.associateBy { it.originalUri.toString() }
+                var cursorMs = 0L
+                val narrationByClipId = mutableMapOf<String, String>()
+                val visualClips = selectedScenes.mapNotNull { scene ->
+                    val originalUri = scene.mediaUri ?: return@mapNotNull null
+                    val importedMedia = importedByOriginalUri[originalUri] ?: return@mapNotNull null
+                    val requestedDurationMs = scene.durationMs.coerceIn(1_000L, 1_800_000L)
+                    val isStillImage = importedMedia.kind == IncomingMediaKind.IMAGE
+                    val sourceDurationMs = if (isStillImage) {
+                        maxOf(importedMedia.clip.sourceDurationMs, requestedDurationMs)
+                    } else {
+                        importedMedia.clip.sourceDurationMs
+                    }
+                    val trimEndMs = if (isStillImage) requestedDurationMs else {
+                        requestedDurationMs.coerceAtMost(sourceDurationMs)
+                    }
+                    if (trimEndMs <= 0L) return@mapNotNull null
+                    val clip = importedMedia.clip.copy(
+                        id = UUID.randomUUID().toString(),
+                        sourceDurationMs = sourceDurationMs,
+                        timelineStartMs = cursorMs,
+                        trimStartMs = 0L,
+                        trimEndMs = trimEndMs,
+                        name = scene.narration.take(80)
+                    )
+                    narrationByClipId[clip.id] = scene.narration
+                    cursorMs += clip.durationMs
+                    clip
+                }
+                if (visualClips.isEmpty()) {
+                    copiedManagedUris.forEach { deleteManagedMediaUri(appContext, it) }
+                    showToast(appContext.getString(R.string.project_import_invalid_media))
+                    return@launch
+                }
+
+                val textOverlays = visualClips.mapNotNull { clip ->
+                    narrationByClipId[clip.id]
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { narration ->
+                            TextOverlay(
+                                text = narration,
+                                fontSize = 40f,
+                                bold = true,
+                                strokeWidth = 2f,
+                                alignment = TextAlignment.CENTER,
+                                positionY = 0.82f,
+                                startTimeMs = clip.timelineStartMs,
+                                endTimeMs = clip.timelineEndMs,
+                            )
+                        }
+                }
+                val trackHeight = settingsRepo.settings.first().defaultTrackHeight
+                val tracks = buildTracks(
+                    listOf(TrackType.VIDEO, TrackType.AUDIO),
+                    trackHeight
+                ).map { track ->
+                    if (track.type == TrackType.VIDEO) track.copy(clips = visualClips) else track
+                }
+                val project = Project(
+                    name = normalizeProjectName(projectName),
+                    durationMs = visualClips.maxOfOrNull { it.timelineEndMs } ?: 0L,
+                    thumbnailUri = visualClips.firstOrNull()?.sourceUri?.toString()
+                )
+                val created = withContext(Dispatchers.IO) {
+                    createProjectWithInitialState(
+                        project = project,
+                        initialState = AutoSaveState(
+                            projectId = project.id,
+                            tracks = tracks,
+                            textOverlays = textOverlays
+                        )
+                    )
+                }
+                if (created) {
+                    onCreated(project.id)
+                } else {
+                    copiedManagedUris.forEach { deleteManagedMediaUri(appContext, it) }
+                    showToast(appContext.getString(R.string.project_create_failed))
+                }
+            } catch (cancelled: CancellationException) {
+                copiedManagedUris.forEach { deleteManagedMediaUri(appContext, it) }
+                throw cancelled
+            } catch (failure: Exception) {
+                AppLog.w("ProjectListVM", "Script-to-scene project creation failed", failure)
+                copiedManagedUris.forEach { deleteManagedMediaUri(appContext, it) }
+                showToast(appContext.getString(R.string.project_create_failed))
+            } finally {
+                endOperation(operation)
+            }
+        }
+    }
+
     fun createProjectFromImports(items: List<IncomingMediaItem>, onCreated: (String) -> Unit) {
         val incomingItems = items.ifEmpty { return }
         viewModelScope.launch {
@@ -879,6 +1012,7 @@ class ProjectListViewModel @Inject constructor(
     }
 
     private data class ImportedIncomingMedia(
+        val originalUri: Uri,
         val kind: IncomingMediaKind,
         val trackType: TrackType,
         val clip: Clip
@@ -941,7 +1075,7 @@ class ProjectListViewModel @Inject constructor(
             } else {
                 nextVisualStartMs = clip.timelineEndMs
             }
-            ImportedIncomingMedia(kind = item.kind, trackType = trackType, clip = clip)
+            ImportedIncomingMedia(originalUri = item.uri, kind = item.kind, trackType = trackType, clip = clip)
         }
     }
 
