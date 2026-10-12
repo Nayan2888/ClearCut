@@ -3735,4 +3735,5 @@
     <string name="s2s_media_attached">Media attached</string>
     <string name="s2s_timeline_no_media_notice">Attach at least one image or video before creating a timeline.</string>
   
+    <string name="s2s_export_format_note">Scene narration is added as on-screen text in ClearCut and exported as markers through OTIO. FCPXML and EDL from this workflow do not yet carry those text overlays. Storyboard JSON preserves narration and prompts.</string>
 </resources>
